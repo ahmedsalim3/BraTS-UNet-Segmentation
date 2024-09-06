@@ -10,6 +10,16 @@ from tensorflow.keras.layers import (
 # ----------------------
 
 def up_conv(inp, ch_out):
+    """
+    Upsample and apply a separable convolution followed by batch normalization and ReLU activation.
+
+    Args:
+        inp (tensor): Input tensor.
+        ch_out (int): Number of output channels.
+
+    Returns:
+        tensor: Processed tensor.
+    """
     x = UpSampling2D()(inp)
     x = SeparableConv2D(filters=ch_out, kernel_size=3, strides=1, padding='same', kernel_initializer='he_normal')(x)
     x = BatchNormalization()(x)
@@ -21,12 +31,33 @@ def up_conv(inp, ch_out):
 ################
 
 def conv_one(inp, ch_out):
+    """
+    Apply a separable convolution followed by batch normalization and ReLU activation.
+
+    Args:
+        inp (tensor): Input tensor.
+        ch_out (int): Number of output channels.
+
+    Returns:
+        tensor: Processed tensor.
+    """
     x = SeparableConv2D(filters=ch_out, kernel_size=3, strides=1, padding='same', kernel_initializer='he_normal')(inp)
     x = BatchNormalization()(x)
     x = Activation('relu')(x)
     return x
 
 def Recurrent_block(inp, ch_out, t= 2):
+    """
+    Apply a recurrent block of separable convolutions with residual connections.
+
+    Args:
+        inp (tensor): Input tensor.
+        ch_out (int): Number of output channels.
+        t (int): Number of recurrent steps.
+
+    Returns:
+        tensor: Processed tensor.
+    """
     for i in range(t):
         if i == 0:
             x1 = conv_one(inp,ch_out)
@@ -40,6 +71,16 @@ def Recurrent_block(inp, ch_out, t= 2):
 # ----------------------
 
 def channel_dice(c, smooth=1.0):
+    """
+    Compute the Dice coefficient for a specific channel.
+
+    Args:
+        c (int): Channel index.
+        smooth (float): Smoothing factor to avoid division by zero.
+
+    Returns:
+        function: Dice coefficient metric function.
+    """
     def dice_metric(y_true, y_pred):
         y_true_f = K.flatten(y_true[:, :, :, c])
         y_pred_f = K.flatten(y_pred[:, :, :, c])
@@ -97,6 +138,17 @@ def mean_iou(y_true, y_pred, smooth=1):
 # CUSTOM LOSS
 ################
 def weighted_dice_loss(y_true, y_pred, weight=1):
+    """
+    Compute the weighted Dice loss.
+
+    Args:
+        y_true (tensor): Ground truth labels.
+        y_pred (tensor): Predicted labels.
+        weight (float): Weighting factor for Dice loss.
+
+    Returns:
+        tensor: Weighted Dice loss.
+    """
     smooth = 1.
     w, m1, m2 = weight * weight, y_true, y_pred
     intersection = (m1 * m2)
@@ -105,18 +157,36 @@ def weighted_dice_loss(y_true, y_pred, weight=1):
     return loss
 
 def weighted_bce_loss(y_true, y_pred, weight):
-    # avoiding overflow
+    """
+    Compute the weighted binary cross-entropy loss.
+
+    Args:
+        y_true (tensor): Ground truth labels.
+        y_pred (tensor): Predicted labels.
+        weight (tensor): Weighting factors.
+
+    Returns:
+        tensor: Weighted binary cross-entropy loss.
+    """
     epsilon = 1e-7
     y_pred = K.clip(y_pred, epsilon, 1. - epsilon)
     logit_y_pred = K.log(y_pred / (1. - y_pred))
-    #logit_y_pred = y_pred
-    
+        
     loss = (1. - y_true) * logit_y_pred + (1. + (weight - 1.) * y_true) * \
     (K.log(1. + K.exp(-K.abs(logit_y_pred))) + K.maximum(-logit_y_pred, 0.))
     return K.sum(loss) / K.sum(weight)
 
 def weighted_bce_and_dice_loss(y_true, y_pred):
-    
+    """
+    Compute a combination of weighted binary cross-entropy and Dice loss.
+
+    Args:
+        y_true (tensor): Ground truth labels.
+        y_pred (tensor): Predicted labels.
+
+    Returns:
+        tensor: Combined loss.
+    """
     y_true = K.cast(y_true, 'float32')
     y_pred = K.cast(y_pred, 'float32')
     # if we want to get same size of output, kernel size must be odd number

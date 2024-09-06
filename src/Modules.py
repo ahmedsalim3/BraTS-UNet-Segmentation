@@ -4,7 +4,6 @@ from tensorflow.keras.layers import (
 )
 
 from tensorflow.keras.models import Model
-from utils import Recurrent_block, up_conv
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -12,9 +11,23 @@ from utils import *
 
 
 class DLUNetModel:
+    """
+    A class representing a Deep Learning U-Net Model with custom layers and blocks.
+    """
     
     @staticmethod
     def Re_ASPP3(in_layer, ch, r):
+        """
+        Applies the Recurrent Atrous Spatial Pyramid Pooling (ASPP) block to the input layer.
+        
+        Args:
+            in_layer (tensor): Input tensor.
+            ch (int): Number of filters for convolution layers.
+            r (int): Dilation rate for the convolutions.
+        
+        Returns:
+            tensor: Output tensor after applying the ASPP block.
+        """
         x1_1 = SeparableConv2D(filters=ch, kernel_size=(3, 3), padding='same', kernel_initializer='he_normal')(in_layer)
         x1_1 = BatchNormalization()(x1_1)
         x1_1 = Activation('relu')(x1_1)
@@ -66,6 +79,17 @@ class DLUNetModel:
     
     @staticmethod
     def Attention_block(x, g, F_init):
+        """
+        Applies an attention block to the given feature maps.
+        
+        Args:
+            x (tensor): Feature maps from the encoder.
+            g (tensor): Feature maps from the decoder.
+            F_init (int): Number of filters for convolution layers in the attention mechanism.
+        
+        Returns:
+            tensor: Output tensor after applying the attention block.
+        """
         g1 = Conv2D(filters=F_init, kernel_size=1, use_bias=True)(g)
         g1 = BatchNormalization()(g1)
         
@@ -84,6 +108,17 @@ class DLUNetModel:
     
     @staticmethod
     def RRCNN_block(inp, ch_out, t=2):
+        """
+        Applies a Recurrent Residual CNN block to the input tensor.
+        
+        Args:
+            inp (tensor): Input tensor.
+            ch_out (int): Number of output filters for convolution layers.
+            t (int): Number of recurrent iterations. Default is 2.
+        
+        Returns:
+            tensor: Output tensor after applying the RRCNN block.
+        """
         x  = Conv2D(filters=ch_out, kernel_size=1, strides=1, padding='valid', kernel_initializer='he_normal')(inp)
         x  = Dropout(0.2)(x)
         x1 = Recurrent_block(x, ch_out=ch_out, t=t)
@@ -92,6 +127,15 @@ class DLUNetModel:
         return x1
     
     def build_model(self, input_shape):
+        """
+        Constructs the U-Net model with ASPP, attention blocks, and RRCNN blocks.
+        
+        Args:
+            input_shape (tuple): Shape of the input images.
+        
+        Returns:
+            Model: Keras model ready for Compiling.
+        """
         inp = Input(input_shape)
         x1 = self.Re_ASPP3(inp, 64, 3)
         
@@ -134,15 +178,13 @@ class DLUNetModel:
         
         return model
 
-
-# from model import DLUNetModel
-
-# model_builder = DLUNetModel()
-# model = model_builder.build_model((256, 256, 3))  # Example input shape
-# model.summary()
   
 
 class ImageVisualizer:
+    """
+    A class for visualizing and processing images for model predictions and ground truth comparisons.
+    """
+    
     def __init__(self, input_shape=(192, 192, 1)):
         """
         Initialize the ImageProcessor with the shape of input images.
@@ -289,8 +331,3 @@ class ImageVisualizer:
             axes[4].imshow(wt_img, cmap='gray')
             axes[4].set_title(f'WT : {wt_score}', fontsize=15)
             axes[4].axis("off")
-
-
-# Example Usage:
-# visualizer = ImageVisualizer()
-# visualizer.plot_all_views(X_test, Y_test, model)
