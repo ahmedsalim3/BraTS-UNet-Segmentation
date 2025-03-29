@@ -23,10 +23,10 @@ FOLD_DATA    = INTERIM_DATA / 'fold_data/'
 train_data = PROJ_ROOT / 'data/processed/train/'
 valid_data = PROJ_ROOT / 'data/processed/valid/'
 
-Xtrain = train_data / 'Xtrain.npy'
-Ytrain = train_data / 'Ytrain.npy'
-Xval   = valid_data / 'Xval.npy'
-Yval   = valid_data / "Yval.npy"
+Xtrain_PATH = train_data / 'Xtrain.npy'
+Ytrain_PATH = train_data / 'Ytrain.npy'
+Xval_PATH   = valid_data / 'Xval.npy'
+Yval_PATH   = valid_data / "Yval.npy"
 
 ##################################################
 # TAKE SAMPLE OF THE DATA IF YOU RAN OUT OF MEMORY
